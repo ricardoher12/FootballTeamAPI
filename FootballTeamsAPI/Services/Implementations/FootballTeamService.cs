@@ -2,11 +2,12 @@
 using FootballTeamsAPI.Dtos;
 using FootballTeamsAPI.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Text;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace FootballTeamsAPI.Services.Implementations
 {
-    public class FootballTeamService: IFootballTeamService
+    public class FootballTeamService : IFootballTeamService
     {
         private readonly AppDbContext _dbContext;
 
@@ -24,43 +25,43 @@ namespace FootballTeamsAPI.Services.Implementations
                 nameof(FootBallTeam.Rank)
                     => int.TryParse(searchTerm, out var rank)
                         ? data.Where(x => x.Rank == rank)
-                        : data,
+                        : throw new ArgumentException("Value provided is not a valid number"),
 
                 nameof(FootBallTeam.Team)
-                    => data.Where(x => x.Team.ToLower().Contains(searchTerm.ToLower())),
+                    => data.Where(x => EF.Functions.Like(x.Team, $"%{searchTerm}%")),
 
                 nameof(FootBallTeam.Mascot)
-                    => data.Where(x => x.Team.ToLower().Contains(searchTerm.ToLower())),
+                    => data.Where(x => EF.Functions.Like(x.Mascot, $"%{searchTerm}%")),
 
                 nameof(FootBallTeam.WinningPercentage)
                     => decimal.TryParse(searchTerm, out var wp)
                         ? data.Where(x => x.WinningPercentage >= wp)
-                        : data,
+                        : throw new ArgumentException("Value provided is not a valid number"),
 
                 nameof(FootBallTeam.Wins)
                     => int.TryParse(searchTerm, out var wins)
                         ? data.Where(x => x.Wins >= wins)
-                        : data,
+                        : throw new ArgumentException("Value provided is not a valid number"),
 
                 nameof(FootBallTeam.Losses)
                     => int.TryParse(searchTerm, out var losses)
                         ? data.Where(x => x.Losses >= losses)
-                        : data,
+                        : throw new ArgumentException("Value provided is not a valid number"),
 
                 nameof(FootBallTeam.Ties)
                     => int.TryParse(searchTerm, out var ties)
                         ? data.Where(x => x.Ties >= ties)
-                        : data,
+                        : throw new ArgumentException("Value provided is not a valid number"),
 
                 nameof(FootBallTeam.Games)
                     => int.TryParse(searchTerm, out var games)
                         ? data.Where(x => x.Games >= games)
-                        : data,
+                        : throw new ArgumentException("Value provided is not a valid number"),
 
                 nameof(FootBallTeam.DateOfLastWin)
                     => DateOnly.TryParse(searchTerm, out var date)
                         ? data.Where(x => x.DateOfLastWin >= date)
-                        : data,
+                        : throw new ArgumentException("Value provided is not a valid date"),
 
                 _ => data
             };
@@ -68,7 +69,7 @@ namespace FootballTeamsAPI.Services.Implementations
             return filteredData;
         }
 
-        public async Task <(int inserted, IEnumerable<CsvRowError> errors, List<FootBallTeam> records)>AddNewFootballTeamsData(List<FootballTeamDto> footballTeams)
+        public async Task<(int inserted, IEnumerable<CsvRowError> errors, List<FootBallTeam> records)> AddNewFootballTeamsData(List<FootballTeamDto> footballTeams)
         {
             _dbContext.FootBallTeam.RemoveRange(_dbContext.FootBallTeam);
             var inserted = 0;
@@ -77,48 +78,56 @@ namespace FootballTeamsAPI.Services.Implementations
             {
                 var rowNumber = i + 2;
                 var row = footballTeams[i];
+                StringBuilder rowErrors = new();
 
                 try
                 {
                     if (string.IsNullOrEmpty(row.Team.Trim()))
-                        throw new ArgumentException("Team name is required");
+                        rowErrors.AppendLine("Team is Required");
 
                     if (string.IsNullOrEmpty(row.Mascot.Trim()))
-                        throw new ArgumentException("Team name is required");
+                        rowErrors.AppendLine("Mascot is required");
 
                     if (!DateOnly.TryParse(row.DateOfLastWin, out DateOnly dateOfLasWin))
                     {
-                        throw new ArgumentException("Date of Last Win should be a valid date");
+                        rowErrors.AppendLine("Date of Last Win should be a valid date");
                     }
 
                     if (!Decimal.TryParse(row.WinningPercentage, out decimal winningPercentage))
                     {
-                        throw new ArgumentException("Winning Percentage should be a valid decimal number");
+                        rowErrors.AppendLine("Winning Percentage should be a valid decimal number");
                     }
 
                     if (!int.TryParse(row.Wins, out int wins))
                     {
-                        throw new ArgumentException("Wins should be a valid integer number");
+                        rowErrors.AppendLine("Wins should be a valid integer number");
                     }
 
                     if (!int.TryParse(row.Losses, out int losses))
                     {
-                        throw new ArgumentException("Losses should be a valid integer number");
+                        rowErrors.AppendLine("Losses should be a valid integer number");
                     }
 
                     if (!int.TryParse(row.Ties, out int ties))
                     {
-                        throw new ArgumentException("Ties should be a valid integer number");
+                        rowErrors.AppendLine("Ties should be a valid integer number");
                     }
 
                     if (!int.TryParse(row.Games, out int games))
                     {
-                        throw new ArgumentException("Games should be a valid integer number");
+                        rowErrors.AppendLine("Games should be a valid integer number");
                     }
 
                     if (!int.TryParse(row.Rank, out int rank))
                     {
-                        throw new ArgumentException("Games should be a valid integer number");
+                        rowErrors.AppendLine("Rank should be a valid integer number");
+                    }
+
+                    var rowErrorsString = rowErrors.ToString();
+
+                    if (rowErrorsString.Length > 0)
+                    {
+                        throw new Exception(rowErrorsString);
                     }
 
                     var footBallTeam = new FootBallTeam

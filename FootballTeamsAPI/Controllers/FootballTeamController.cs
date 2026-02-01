@@ -76,23 +76,18 @@ namespace FootballTeamsAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> GetFilteredFootballTeam(string term = "", string column = "")
         {
-            //if (string.IsNullOrEmpty(term))
-            //{
-            //    return BadRequest(new  {message = "Please provide a valid search term" });
-            //}
-
-            //if(string.IsNullOrEmpty(column) || string.Equals(column, "all", StringComparison.OrdinalIgnoreCase))
-            //{
-            //    return BadRequest(new { message = "Please provide a valid column to search" });
-            //}
-
-
-            //if (IsInvalidSearchValue(term))
-            //{
-            //    return BadRequest(new { message = "Invalid search value." });
-            //}
-
-            return Ok(_footballTeamService.FilterTeams(EscapeLike(term), column));
+            try
+            {
+                return Ok(_footballTeamService.FilterTeams(EscapeLike(term), column));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+            }
         }
 
         //private static bool IsInvalidSearchValue(string value)
@@ -104,7 +99,6 @@ namespace FootballTeamsAPI.Controllers
         private static string EscapeLike(string value)
         {
             return value
-                .Replace("[", "[[]")
                 .Replace("%", "[%]")
                 .Replace("_", "[_]");
         }
