@@ -127,24 +127,31 @@ namespace FootballTeamsAPI.Services.Implementations
 
                     if (rowErrorsString.Length > 0)
                     {
-                        throw new Exception(rowErrorsString);
+                        errors.Add(new CsvRowError
+                        {
+                            RowNumber = rowNumber,
+                            Row = row,
+                            Error = rowErrorsString.ToString()
+                        });
                     }
-
-                    var footBallTeam = new FootBallTeam
+                    else
                     {
-                        Team = row.Team.Trim(),
-                        Mascot = row.Mascot.Trim(),
-                        DateOfLastWin = dateOfLasWin,
-                        WinningPercentage = winningPercentage,
-                        Wins = wins,
-                        Ties = ties,
-                        Losses = losses,
-                        Games = games,
-                        Rank = rank
-                    };
+                        var footBallTeam = new FootBallTeam
+                        {
+                            Team = row.Team.Trim(),
+                            Mascot = row.Mascot.Trim(),
+                            DateOfLastWin = dateOfLasWin,
+                            WinningPercentage = winningPercentage,
+                            Wins = wins,
+                            Ties = ties,
+                            Losses = losses,
+                            Games = games,
+                            Rank = rank
+                        };
 
-                    _dbContext.FootBallTeam.Add(footBallTeam);
-                    inserted++;
+                        _dbContext.FootBallTeam.Add(footBallTeam);
+                        inserted++;
+                    }                       
                 }
                 catch (Exception ex)
                 {
