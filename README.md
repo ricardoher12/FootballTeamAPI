@@ -53,3 +53,6 @@ This includes backend API development, CSV validation logic, database integratio
 ## ✅ Summary
 
 This project prioritizes correctness, resilience, and transparency. By validating data early, handling partial failures gracefully, and returning meaningful feedback to the client, the application provides a robust foundation for working with structured CSV data at scale.
+
+## Run Peoject
+In order to run the project please make sure to add a path file to a SqlLite DB, and set up the credentials for basic authentication, please make sure to use the same credentails in the UI
